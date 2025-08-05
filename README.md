@@ -3,14 +3,10 @@
 GRADE: 104/100 
 
 Test non-batched generate function [ 10 / 10 ]
--------------------------------------------------- 
 Model batched inference grader [ 15 / 15 ]
--------------------------------------------------- 
 CoT Model Grader [ 25 / 25 ]
--------------------------------------------------- 
-SFT Model Grader [ 25 / 25 ]-------------------------------------------------- 
+SFT Model Grader [ 25 / 25 ]
 RFT Model Grader [ 29 / 25 ]
--------------------------------------------------- [ 104 / 100 ]
 
 In this homework, we will train language models to perform unit conversions (meters to yard to feet etc).
 We will use SmolLM2 and the huggingface library (with some more dependencies than usual).
