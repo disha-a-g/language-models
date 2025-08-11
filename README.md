@@ -1,5 +1,12 @@
 # Homework 3 - Well reasoned unit conversion
 
+![No Reuse Allowed](https://img.shields.io/badge/Reuse%20of%20Code-Not%20Allowed-red?style=for-the-badge&logo=github)
+
+⚠️ Academic Integrity Notice: This is my original academic work. Copying, reusing, or submitting it for credit in any form is an academic integrity violation and may result in disciplinary action.
+
+___
+
+
 GRADE: 104/100 
 
 - Test non-batched generate function [ 10 / 10 ]
@@ -11,6 +18,8 @@ GRADE: 104/100
 - SFT Model Grader [ 25 / 25 ]
 
 - RFT Model Grader [ 29 / 25 ]
+
+___
 
 In this homework, we will train language models to perform unit conversions (meters to yard to feet etc).
 We will use SmolLM2 and the huggingface library (with some more dependencies than usual).
