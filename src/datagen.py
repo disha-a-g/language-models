@@ -7,12 +7,9 @@ def generate_dataset(
     oversample: int = 10,
     temperature: float = 0.6,
 ):
-    # this is the tecnique i used based on ed posts 
-    # two‑pass approach first tries a cheap greedy rollout; 
-    # if that fails, it samples a handful of chain‑of‑thoughts, picks the first correct one, 
-    # and builds a JSON dataset of high‑quality question → reasoning → answer examples for downstream fine‑tuning
-
-    # print("▶️  starting generate_dataset, writing to", output_json)
+    # Two-pass rollout per question: try a cheap greedy generation first; if it misses,
+    # sample several chain-of-thought completions and keep the first correct one.
+    # The surviving (question, answer, reasoning) triples become the RFT training set.
     model = CoTModel()
     raw = Dataset("train")
     out = []
@@ -21,7 +18,7 @@ def generate_dataset(
     for question, true_answer in raw:
         prompt = model.format_prompt(question)
 
-        # 1 greedy / temp=0
+        # pass 1: greedy
         gen0 = model.batched_generate(
             [prompt],
             num_return_sequences=1,
@@ -31,9 +28,9 @@ def generate_dataset(
         if (not math.isnan(pred0)) and abs(pred0 - true_answer) < 1e-3:
             out.append([question, true_answer, gen0])
             stats["pass1"] += 1
-            continue  # early accept!
+            continue
 
-        # 2 sampling
+        # pass 2: sampling
         gens = model.batched_generate(
             [prompt],
             num_return_sequences=oversample,
@@ -50,10 +47,10 @@ def generate_dataset(
         if chosen:
             out.append([question, true_answer, chosen])
 
-    # Wrote 404 examples (0 from pass1, 404 from pass2)
+    # last recorded run: 404 examples (0 from pass1, 404 from pass2)
     with open(output_json, "w") as f:
         json.dump(out, f, indent=2)
-    print(f"✅ Wrote {len(out)} examples ({stats['pass1']} from pass1, {stats['pass2']} from pass2) to {output_json}")
+    print(f"Wrote {len(out)} examples ({stats['pass1']} from pass1, {stats['pass2']} from pass2) to {output_json}")
 
 if __name__ == "__main__":
     from fire import Fire

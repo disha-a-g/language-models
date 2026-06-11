@@ -27,7 +27,7 @@ def train_model(
     from peft import LoraConfig, get_peft_model
     from .data import Dataset as Raw
 
-    # RFT roll‑out data
+    # RFT rollout data produced by datagen.py
     json_path = Path(__file__).parent.parent / "data" / "rft.json"
     with open(json_path) as f:
         rft_data = json.load(f)
@@ -38,8 +38,7 @@ def train_model(
         [q, a, f"<answer>{a}</answer>"]
         for q, a in sft_raw
     ]
-    # combined list
-    all_data = sft_entries + rft_data   
+    all_data = sft_entries + rft_data
     llm = BaseLLM()
 
     # LoRA adapter
@@ -57,7 +56,7 @@ def train_model(
     
     model = build_lora_model(llm.model)
 
-    # now combined RFT+SFT dataset
+    # dataset over the combined RFT + SFT examples
     class RFTDataset(torch.utils.data.Dataset):
         def __init__(self, tokenizer, data, max_length=128):
             self.tokenizer = tokenizer
@@ -89,7 +88,7 @@ def train_model(
             enc["labels"] = labels
             return enc
 
-    train_dataset = RFTDataset(llm.tokenizer, all_data)  # ← use all_data here
+    train_dataset = RFTDataset(llm.tokenizer, all_data)
 
     # trainer 
     default_args = dict(

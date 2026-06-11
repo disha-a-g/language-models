@@ -4,8 +4,8 @@ from .base_llm import BaseLLM
 class CoTModel(BaseLLM):
     def format_prompt(self, question: str) -> str:
         """
-        Take a question and convert it into a chat template. The LLM will likely answer much
-        better if you provide a chat template. self.tokenizer.apply_chat_template can help here
+        Build a chat prompt with a system instruction and worked examples, rendered
+        through the model's chat template so the assistant continues in the same style.
         """
 
         system_msg = (

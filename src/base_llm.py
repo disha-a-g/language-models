@@ -16,9 +16,8 @@ class BaseLLM:
 
     def format_prompt(self, question: str) -> str:
         """
-        Take a question and convert it into an input to SmolLM2. The LLM will likely answer much
-        better if you provide a chat template. self.tokenizer.apply_chat_template can help here
-        You don't need to change this function for now.
+        Convert a question into a model prompt. The base model takes the question as-is;
+        subclasses override this to add prompting structure (see CoTModel).
         """
         return question
 
@@ -34,14 +33,7 @@ class BaseLLM:
 
     def generate(self, prompt: str) -> str:
         """
-        (Optional) Implement this method first and then implement batched_generate below.
-        It is much easier to implement generation without batching.
-
-        The overall flow is the same:
-        - tokenize the prompt with self.tokenizer
-        - call self.model.generate
-        - decode the outputs with self.tokenizer.decode
-
+        Generate a single completion. Convenience wrapper around batched_generate.
         """
         return self.batched_generate([prompt])[0]
 
@@ -67,34 +59,17 @@ class BaseLLM:
         self, prompts: list[str], num_return_sequences: int | None = None, temperature: float = 0
     ) -> list[str] | list[list[str]]:
         """
-        Batched version of `generate` method.
+        Batched version of `generate`.
 
-        You will likely get an up to 10x speedup using batched decoding.
-
-        To implement batch decoding you will need to:
-        - tokenize the prompts self.tokenizer with padding=True and return_tensors="pt"
-        - call self.model.generate
-        - decode the outputs with self.tokenizer.batch_decode
-
-        Tip: You need to set self.tokenizer.padding_side = "left" to get the correct padding behavior for generation.
-             Left padding makes sure all sequences are aligned to the right (i.e. where tokens are generated).
-        Tip: self.model.generate takes a lot of parameters. Here are some relevant ones:
-            - max_new_tokens: The maximum number of tokens to generate. Set this to a reasonable value
-                              (50 should suffice).
-            - do_sample and temperature: For any temperature > 0, set do_sample=True.
-                                         do_sample=False will use greedy decoding.
-            - num_return_sequences: The number of sequences to return. Note that this will generate a flat
-                                    list of len(prompts) * num_return_sequences entries.
-            - eos_token_id: The end of sequence token id. This is used to stop generation. Set this
-                            to self.tokenizer.eos_token_id.
-        Pro Tip: Only batch_decode generated tokens by masking out the inputs with
-                 outputs[:, len(inputs["input_ids"][0]) :]
+        Prompts are tokenized with left padding so every sequence is aligned on the right,
+        where generation starts, and the attention mask tells the model to ignore the pads.
+        Only the newly generated tokens are decoded; each prompt is stripped from its output.
+        With temperature > 0 the model samples; at 0 it decodes greedily. When
+        num_return_sequences is set, returns a list of generations per prompt.
         """
-        from tqdm import tqdm  # Importing tqdm for progress bar
+        from tqdm import tqdm
 
-        # Preventing OOM
-        # Depending on your GPU batched generation will use a lot of memory.
-        # If you run out of memory, try to reduce the micro_batch_size.
+        # split large batches into micro batches to bound GPU memory
         micro_batch_size = 32
         if len(prompts) > micro_batch_size:
             return [
@@ -120,7 +95,7 @@ class BaseLLM:
             "eos_token_id": self.tokenizer.eos_token_id,
         }
 
-        # edited for RFT to accomdate temp - gpt suggestion
+        # sample for temperature > 0 (used for RFT rollouts), greedy otherwise
         if temperature > 0:
           gen_kwargs.update({
             "do_sample": True,
@@ -172,9 +147,7 @@ class BaseLLM:
 
 
 def test_model():
-    # The following code simply tests of the BaseLLM is able to complete text.
-    # It should produce garbage answers, but it should not crash.
-    # In my case it talks about cats eating cats, and dogs being happy.
+    # smoke test: the base model just needs to complete text without crashing
     testset = ["The cat went up", "The dog went down"]
     model = BaseLLM()
     for t in testset:
