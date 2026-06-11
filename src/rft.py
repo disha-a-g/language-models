@@ -8,7 +8,7 @@ def load() -> BaseLLM:
     from peft import PeftModel
 
     model_name = "rft_model"
-    model_path = Path(__file__).parent / model_name
+    model_path = Path(__file__).parent.parent / model_name
 
     llm = BaseLLM()
     llm.model = PeftModel.from_pretrained(llm.model, model_path).to(llm.device)
@@ -25,7 +25,7 @@ def train_model(
     import json, torch
     from transformers import Trainer, TrainingArguments
     from peft import LoraConfig, get_peft_model
-    from homework.data import Dataset as Raw     
+    from .data import Dataset as Raw
 
     # RFT roll‑out data
     json_path = Path(__file__).parent.parent / "data" / "rft.json"

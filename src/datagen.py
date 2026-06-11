@@ -1,6 +1,6 @@
 import json, math
-from homework.cot import CoTModel
-from homework.data import Dataset
+from .cot import CoTModel
+from .data import Dataset
 
 def generate_dataset(
     output_json: str,
